@@ -1,10 +1,16 @@
-name: Upload Asset - Linux
+name: Upload Asset - Linux-CentOS-7
 
+# on:
+#   push:
+#     # Sequence of patterns matched against refs/tags
+#     tags:
+#     - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+#
 on:
   push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   build:
@@ -23,16 +29,16 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
-      - name: build docker image
-        run: docker build -t ubuntu-18.04-gcc-9 ./.github/workflows/dockerfiles/ubuntu-18.04-x64
 
       # build the binary in docker image
       - name: Run the build process with Docker
         uses: addnab/docker-run-action@v3
         with:
-            image: ubuntu-18.04-gcc-9
-            options: -v ${{ github.workspace }}:/home/app
+            image: slangdeveloper/centos7-gcc9
+            options: -v ${{ github.workspace }}:/home/app -v /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt
             run: |
+              source /opt/rh/devtoolset-9/enable
+              yum install -y zlib-devel
               cd /home/app
               git config --global --add safe.directory /home/app
               PREMAKE=external/slang-binaries/premake/premake-5.0.0-alpha16/bin/linux-64/premake5
@@ -53,7 +59,7 @@ jobs:
           echo "tag:$TAG_NAME"
           echo "slang-llvm-version:$LLVM_VERSION"
 
-          BIN_ARCHIVE="slang-llvm-$TAG_NAME-$PLATFORM_NAME-${{matrix.configuration}}-glibc-2.27.zip"
+          BIN_ARCHIVE="slang-llvm-$TAG_NAME-$PLATFORM_NAME-${{matrix.configuration}}-glibc-2.17.zip"
 
           zip "$BIN_ARCHIVE" README.md
           zip "$BIN_ARCHIVE" LICENSE
